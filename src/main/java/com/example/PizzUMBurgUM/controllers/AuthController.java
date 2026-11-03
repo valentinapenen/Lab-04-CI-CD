@@ -27,7 +27,6 @@ public class AuthController {
 
     @GetMapping("/iniciar-sesion")
     public String mostrarLogin(Model model, HttpSession session) {
-        // Añadir el objeto LoginRequest al modelo
         LoginRequest loginRequest = new LoginRequest();
         model.addAttribute("loginRequest", loginRequest);
 
@@ -37,16 +36,13 @@ public class AuthController {
             model.addAttribute("error", error);
             // Limpiar el mensaje de error de la sesión
             session.removeAttribute("error");
-            System.out.println("Mostrando mensaje de error: " + error);
         }
 
-        // Devuelve el archivo: src/main/resources/templates/inicio/iniciar-sesion.html
         return "inicio/iniciar-sesion";
     }
 
     @GetMapping("/crear-cuenta")
     public String mostrarRegistro(Model model) {
-        // Crear un nuevo objeto RegistroClienteRequest
         RegistroClienteRequest registroClienteRequest = new RegistroClienteRequest();
 
         // Inicializar los objetos anidados
@@ -58,10 +54,8 @@ public class AuthController {
         tarjeta.setPredeterminada(true);
         registroClienteRequest.setTarjeta(tarjeta);
 
-        // Añadir el objeto al modelo
         model.addAttribute("registroClienteRequest", registroClienteRequest);
 
-        // Devuelve el archivo: src/main/resources/templates/inicio/crear-cuenta.html
         return "inicio/crear-cuenta";
     }
 

@@ -73,15 +73,11 @@ public class DomicilioService {
         return domicilioRepository.findByCliente(cliente);
     }
 
-
-    // --- NUEVO: helper genérico para guardar cambios en un domicilio ---
     public Domicilio guardar(Domicilio domicilio) {
         return domicilioRepository.save(domicilio);
     }
 
-    // --- NUEVO: métodos "pensados para el cliente logueado" ---
-
-    /** Lista domicilios por id de cliente (por si no querés pasar el objeto Cliente) */
+    /** Lista los domicilios de un cliente. */
     public List<Domicilio> listarPorClienteId(long clienteId) {
         Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new RuntimeException("Cliente no encontrado."));
@@ -102,8 +98,6 @@ public class DomicilioService {
         return domicilio;
     }
 
-
-
     //Elimina un domicilio solo si pertenece al cliente
     public void eliminarDomicilioDeCliente(long clienteId, long domicilioId) {
         Domicilio domicilio = obtenerDomicilioDeCliente(clienteId, domicilioId);
@@ -113,7 +107,7 @@ public class DomicilioService {
     /** Crea o actualiza un domicilio de un cliente según si tiene id o no */
     public Domicilio guardarDomicilioDeCliente(long clienteId, Domicilio datos) {
 
-        // NUEVO domicilio
+        // Crear domicilio
         if (datos.getId() == 0) {
             return crearDomicilioCliente(
                     clienteId,
@@ -126,7 +120,7 @@ public class DomicilioService {
             );
         }
 
-        // EDITAR existente
+        // Editar domicilio existente
         Domicilio existente = obtenerDomicilioDeCliente(clienteId, datos.getId());
 
         existente.setCalle(datos.getCalle());
@@ -137,6 +131,5 @@ public class DomicilioService {
 
         return guardar(existente);
     }
-
 
 }

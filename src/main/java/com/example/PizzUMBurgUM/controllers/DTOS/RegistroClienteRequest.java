@@ -1,7 +1,5 @@
 package com.example.PizzUMBurgUM.controllers.DTOS;
 
-import com.example.PizzUMBurgUM.entities.Domicilio;
-import com.example.PizzUMBurgUM.entities.Tarjeta;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

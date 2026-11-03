@@ -4,6 +4,8 @@ import com.example.PizzUMBurgUM.controllers.DTOS.CreacionAdministradorRequest;
 import com.example.PizzUMBurgUM.controllers.DTOS.DomicilioRequest;
 import com.example.PizzUMBurgUM.entities.Administrador;
 import com.example.PizzUMBurgUM.services.AdministradorService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -22,6 +24,8 @@ import java.time.LocalDate;
  */
 @Component
 public class AdminSeeder implements CommandLineRunner {
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminSeeder.class);
 
     private final AdministradorService administradorService;
 
@@ -77,7 +81,7 @@ public class AdminSeeder implements CommandLineRunner {
         // Evitar duplicados por correo
         Administrador existente = administradorService.encontrarAdminPorCorreo(correo);
         if (existente != null) {
-            System.out.println("[AdminSeeder] Admin ya existe, no se crea: " + correo);
+            logger.info("El administrador inicial ya existe.");
             return;
         }
 
@@ -102,11 +106,11 @@ public class AdminSeeder implements CommandLineRunner {
             req.setContrasena(contrasena);
             req.setDomicilio_facturacion(domicilioReq);
 
-            Administrador creado = administradorService.crearAdministrador(req);
-            System.out.println("[AdminSeeder] Administrador creado con ID=" + creado.getId() + " correo=" + correo);
+            administradorService.crearAdministrador(req);
+            logger.info("Administrador inicial creado.");
 
         } catch (Exception e) {
-            System.err.println("[AdminSeeder] Error creando administrador de semilla: " + e.getMessage());
+            logger.error("Error al crear el administrador inicial de tipo {}.", e.getClass().getSimpleName());
         }
     }
 }

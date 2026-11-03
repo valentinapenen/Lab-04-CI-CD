@@ -6,7 +6,6 @@ import com.example.PizzUMBurgUM.entities.Pedido;
 import com.example.PizzUMBurgUM.entities.Usuario;
 import com.example.PizzUMBurgUM.entities.enums.CategoriaProducto;
 import com.example.PizzUMBurgUM.entities.enums.TamanoPizza;
-import com.example.PizzUMBurgUM.entities.enums.TipoCreacion;
 import com.example.PizzUMBurgUM.entities.enums.TipoProducto;
 import com.example.PizzUMBurgUM.services.ClienteService;
 import com.example.PizzUMBurgUM.services.CreacionService;

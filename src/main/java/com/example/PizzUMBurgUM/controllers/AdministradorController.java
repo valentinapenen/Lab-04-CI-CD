@@ -7,7 +7,6 @@ import com.example.PizzUMBurgUM.entities.Usuario;
 import com.example.PizzUMBurgUM.services.AdministradorService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;

@@ -33,7 +33,6 @@
     <div class="admin-item large">
       <h2>Nuevo administrador</h2>
 
-      <!-- ✔️ FORM corregido: coincide con tu Controller y DTO -->
       <form th:action="@{/administrador/crearAdministrador}"
             th:object="${creacionAdmin}"
             method="post">

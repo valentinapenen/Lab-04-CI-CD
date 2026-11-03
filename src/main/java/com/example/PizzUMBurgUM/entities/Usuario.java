@@ -10,7 +10,6 @@ import jakarta.persistence.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
-import java.util.Date;
 
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)

@@ -12,20 +12,7 @@
 	<artifactId>PizzUMBurgUM</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>PizzUMBurgUM</name>
-	<description>Codex project</description>
-	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
-	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
-	</scm>
+	<description>Aplicación web de gestión de pedidos para PizzUM &amp; BurgUM.</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>

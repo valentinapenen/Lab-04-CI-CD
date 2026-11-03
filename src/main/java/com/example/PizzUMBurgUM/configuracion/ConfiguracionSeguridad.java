@@ -31,7 +31,7 @@ public class ConfiguracionSeguridad {
 
         http
                 .authorizeHttpRequests(auth -> auth
-                                // To do lo público
+                                // Rutas públicas
                                 .requestMatchers(
                                 "/", "/bienvenida", "/iniciar-sesion", "/crear-cuenta",
                                 "/css/**", "/js/**", "/images/**",
@@ -42,7 +42,7 @@ public class ConfiguracionSeguridad {
 
                 // Config login
                 .formLogin(form -> form
-                        .loginPage("/iniciar-sesion")          // Tu formulario
+                        .loginPage("/iniciar-sesion")
                         .loginProcessingUrl("/procesar-login") // URL del POST
                         .usernameParameter("correo")          // Nombre del campo de correo
                         .passwordParameter("contrasena")      // Nombre del campo de contraseña

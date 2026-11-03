@@ -53,7 +53,7 @@
         </select>
 
         <label>Precio:</label>
-        <input class="admin-input" type="number" step="1" th:field="*{precio}" required/>
+        <input class="admin-input" type="number" min="0" step="1" th:field="*{precio}" required/>
 
         <button type="submit" style="margin-top:10px;">Crear Producto</button>
       </form>
@@ -64,7 +64,7 @@
       <h2>Editar Precio</h2>
       <form th:object="${producto}" th:action="@{/admin/productos/{id}/actualizar-precio(id=${producto.id})}" method="post">
         <label>Precio:</label>
-        <input class="admin-input" type="number" step="1" th:field="*{precio}" required/>
+        <input class="admin-input" type="number" min="0" step="1" th:field="*{precio}" required/>
 
         <button type="submit" style="margin-top:10px;">Actualizar Precio</button>
       </form>

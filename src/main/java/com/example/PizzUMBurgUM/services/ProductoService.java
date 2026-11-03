@@ -29,8 +29,8 @@ public class ProductoService {
             throw new IllegalArgumentException("El producto debe tener nombre");
         }
 
-        if (producto.getPrecio() <= 0) {
-            throw new IllegalArgumentException("El producto debe tener un precio válido");
+        if (producto.getPrecio() < 0) {
+            throw new IllegalArgumentException("El precio no puede ser negativo");
         }
 
         // disponible = true por defecto
@@ -41,8 +41,8 @@ public class ProductoService {
     public Producto actualizarPrecio(long id, double nuevoPrecio) {
         Producto producto = buscarPorId(id);
 
-        if (nuevoPrecio <= 0) {
-            throw new IllegalArgumentException("El precio debe ser mayor a 0");
+        if (nuevoPrecio < 0) {
+            throw new IllegalArgumentException("El precio no puede ser negativo");
         }
 
         producto.setPrecio(nuevoPrecio);

@@ -142,9 +142,12 @@ El proyecto también expone endpoints REST heredados: `/api/bps/funcionarios`, `
 
 ## Pruebas
 
-Actualmente existe un único test: [PizzUmBurgUmApplicationTests](src/test/java/com/example/PizzUMBurgUM/PizzUmBurgUmApplicationTests.java). Comprueba que el contexto de Spring carga; no verifica los flujos de negocio.
+Las pruebas disponibles son:
 
-Para ejecutarlo con una base H2 temporal, sin utilizar PostgreSQL ni crear el administrador inicial, desde PowerShell:
+- [PizzUmBurgUmApplicationTests](src/test/java/com/example/PizzUMBurgUM/PizzUmBurgUmApplicationTests.java): comprueba que el contexto de Spring carga.
+- [ProductoServiceTests](src/test/java/com/example/PizzUMBurgUM/services/ProductoServiceTests.java): ocho casos unitarios de creación y actualización de precios. Aceptan cero y valores positivos, y rechazan negativos sin guardar cambios. Utilizan repositorios simulados.
+
+Para ejecutarlas con una base H2 temporal, sin utilizar PostgreSQL ni crear el administrador inicial, desde PowerShell:
 
 ```powershell
 $testOptions = @(

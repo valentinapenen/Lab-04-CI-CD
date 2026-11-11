@@ -12,10 +12,10 @@ pipeline {
             }
         }
 
-        stage('Compilar y probar') {
+        stage('Compilar, probar y empaquetar') {
             steps {
                 sh '''
-                    sh ./mvnw -B clean test \
+                    sh ./mvnw -B clean package \
                         '-Dspring.datasource.url=jdbc:h2:mem:pruebas;DB_CLOSE_DELAY=-1' \
                         '-Dspring.datasource.driver-class-name=org.h2.Driver' \
                         '-Dspring.datasource.username=sa' \
@@ -25,6 +25,11 @@ pipeline {
                         '-Dspring.jpa.show-sql=false' \
                         '-Dapp.seed-admin=false'
                 '''
+            }
+        }
+        stage('Guardar JAR') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
         }
     }

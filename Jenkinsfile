@@ -3,6 +3,7 @@ pipeline {
 
     options {
         skipDefaultCheckout()
+        disableConcurrentBuilds()
     }
 
     stages {
@@ -30,6 +31,11 @@ pipeline {
         stage('Guardar JAR') {
             steps {
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+        stage('Desplegar en simulado') {
+            steps {
+                sh 'sh deploy/simulado/publicar.sh'
             }
         }
     }

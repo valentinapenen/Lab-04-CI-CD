@@ -167,16 +167,49 @@ Ejecutar solamente `test`, sin esas opciones, utiliza la configuración PostgreS
 
 La preparación inicial se verificó compilando con JDK 24 y destino Java 21, y ejecutando el test con H2: **1 test, 0 fallos y 0 errores**. Esto no demuestra el funcionamiento completo con PostgreSQL. La comprobación HTTP quedó pendiente porque el entorno de revisión impidió que Java estableciera una conexión local. No hay un linter configurado.
 
+## Despliegue simulado
+
+Jenkins consulta `main` mediante **Poll SCM**. Cuando detecta un cambio, carga el [Jenkinsfile](Jenkinsfile), compila, ejecuta las pruebas con H2 y archiva el JAR. Después publica ese mismo archivo en el ambiente simulado y espera que la página de inicio devuelva HTTP 200 para esa versión.
+
+El ambiente se define en [compose.simulado.yml](compose.simulado.yml). Usa un PostgreSQL propio y sirve la aplicación en [http://127.0.0.1:8082/](http://127.0.0.1:8082/). El contenedor ejecuta el JAR con Java 21 y comparte con Jenkins dos subcarpetas del volumen `jenkins_lab04_home`, una para el JAR y otra para confirmar qué versión respondió.
+
+### Preparar el ambiente
+
+Desde PowerShell, en la raíz del proyecto, con el contenedor `jenkins-lab04` iniciado:
+
+```powershell
+$simEnv = 'deploy/simulado/.env'
+if (-not (Test-Path -LiteralPath $simEnv)) {
+    $dbPassword = [Guid]::NewGuid().ToString('N')
+    $adminPassword = [Guid]::NewGuid().ToString('N')
+    @(
+        "LAB04_SIM_DB_PASSWORD=$dbPassword"
+        "LAB04_SIM_ADMIN_PASSWORD=$adminPassword"
+    ) | Set-Content -LiteralPath $simEnv -Encoding ascii
+}
+docker exec jenkins-lab04 mkdir -p /var/jenkins_home/lab04-simulado/releases /var/jenkins_home/lab04-simulado/status
+docker compose --env-file $simEnv -f compose.simulado.yml up -d
+```
+
+Git ignora el archivo `.env` local que se genera. Para iniciar sesión en el ambiente simulado, usar el correo `app.seed-admin.correo` de [application.properties](src/main/resources/application.properties) y la contraseña `LAB04_SIM_ADMIN_PASSWORD` del archivo local. Conservar ese archivo para volver a levantar la misma base.
+
+### Verificar el despliegue
+
+Tras subir un commit a `main`, esperar la ejecución automática y buscar en la consola `Started by an SCM change`, el total de pruebas y `Despliegue confirmado: HTTP 200 para <hash>`. Abrir el enlace del ambiente simulado y comprobar que muestra la aplicación. Si las pruebas fallan, Jenkins no llega a la etapa de despliegue.
+
+Para detener el ambiente simulado conservando la base y el JAR publicado:
+
+```powershell
+docker compose --env-file deploy/simulado/.env -f compose.simulado.yml stop
+```
+
 ## Estado inicial y próximos pasos
 
 La preparación inicial retiró clases y recursos sin referencias, imports sobrantes, comentarios temporales y mensajes de depuración con datos personales o hashes de contraseñas. También ajustó los metadatos del proyecto.
 
 Para el Entregable 4 queda implementar:
 
-- Pruebas unitarias de los módulos y pruebas de integración.
-- Un `Jenkinsfile` declarativo versionado con el código.
-- Ejecución automática ante cambios en GitHub.
-- Despliegue a un ambiente de producción simulado.
+- Ampliar las pruebas unitarias a los módulos pendientes y agregar pruebas de integración de los flujos de negocio.
 - UAT y aprobación manual del despliegue si el grupo tiene tres integrantes.
 - Documentación del pipeline, errores encontrados y demostración de los casos exitoso y fallido.
 
@@ -185,6 +218,6 @@ Antes de modificar un flujo, tener presentes estos puntos de la base heredada:
 - `TarjetaController`, `DomicilioController` y `CreacionController` conservan rutas antiguas que apuntan a seis vistas inexistentes. Las pantallas actuales usan los controladores indicados en el mapa de componentes. Su retiro está pendiente de revisión.
 - `UsuarioService.login()` conserva una implementación antigua sin llamadas encontradas. La autenticación vigente pasa por Spring Security.
 - `ClienteDomicilioController` mantiene redirecciones a `/usuario/login`, una ruta inexistente; el acceso actual es `/iniciar-sesion`.
-- Falta separar credenciales, creación del administrador y configuración de bases por ambiente, y comprobar el recorrido completo con PostgreSQL.
+- La configuración de desarrollo heredada todavía incluye credenciales fijas. Falta comprobar el recorrido completo de compra con PostgreSQL.
 
 Para trabajar en esta entrega, crear las ramas de cada tarea desde `main` y abrir los pull requests en **Lab-04-CI-CD**. El repositorio original se mantiene como referencia del trabajo anterior.

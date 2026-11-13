@@ -1,0 +1,59 @@
+name: lab04-simulado
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: pizzumburgum
+      POSTGRES_USER: pizzumburgum
+      POSTGRES_PASSWORD: ${LAB04_SIM_DB_PASSWORD:?Definir LAB04_SIM_DB_PASSWORD}
+    volumes:
+      - postgres_simulado:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  app:
+    image: jenkins/jenkins:lts-jdk21
+    init: true
+    entrypoint: ["/bin/sh", "/opt/lab04/ejecutar.sh"]
+    ports:
+      - "127.0.0.1:8082:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pizzumburgum
+      SPRING_DATASOURCE_USERNAME: pizzumburgum
+      SPRING_DATASOURCE_PASSWORD: ${LAB04_SIM_DB_PASSWORD:?Definir LAB04_SIM_DB_PASSWORD}
+      SPRING_JPA_SHOW_SQL: "false"
+      APP_SEED_ADMIN: "true"
+      APP_SEED_ADMIN_CONTRASENA: ${LAB04_SIM_ADMIN_PASSWORD:?Definir LAB04_SIM_ADMIN_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./deploy/simulado/ejecutar.sh:/opt/lab04/ejecutar.sh:ro
+      - type: volume
+        source: jenkins_home
+        target: /versiones
+        read_only: true
+        volume:
+          subpath: lab04-simulado/releases
+          nocopy: true
+      - type: volume
+        source: jenkins_home
+        target: /estado
+        volume:
+          subpath: lab04-simulado/status
+          nocopy: true
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--max-time", "3", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  postgres_simulado:
+  jenkins_home:
+    external: true
+    name: jenkins_lab04_home

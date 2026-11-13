@@ -29,7 +29,7 @@ public class ProductoService {
             throw new IllegalArgumentException("El producto debe tener nombre");
         }
 
-        if (producto.getPrecio() < 0) {
+        if (producto.getPrecio() <= 0) {
             throw new IllegalArgumentException("El precio no puede ser negativo");
         }
 

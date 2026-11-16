@@ -62,6 +62,7 @@
                     <option th:each="e : ${T(com.example.PizzUMBurgUM.entities.enums.EstadoPedido).values()}"
                             th:if="${p.estado.name() == 'EN_COLA' or e.ordinal() >= p.estado.ordinal()}"
                             th:value="${e}"
+                            th:selected="${e == p.estado}"
                             th:text="${e}">
                     </option>
                 </select>

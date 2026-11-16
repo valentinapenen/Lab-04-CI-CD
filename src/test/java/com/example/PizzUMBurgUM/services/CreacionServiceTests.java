@@ -44,14 +44,14 @@ class CreacionServiceTests {
 
     @Test
     void crearPedidoDesdeCarrito_carritoVacio_rechazaYSinGuardarPedido() {
-        // Arrange: клиент с пустой корзиной
+        // Preparación: cliente con el carrito vacío
         Cliente cliente = new Cliente();
         cliente.setId(1L);
 
         when(creacionRepository.findByClienteIdAndEnCarritoTrue(1L))
                 .thenReturn(Collections.emptyList());
 
-        // Act & Assert: проверяем выброс IllegalStateException
+        // Ejecución y verificación: debe lanzar IllegalStateException
         IllegalStateException exception = assertThrows(
                 IllegalStateException.class,
                 () -> creacionService.crearPedidoDesdeCarrito(cliente, 10L, 20L)
@@ -59,7 +59,7 @@ class CreacionServiceTests {
 
         assertEquals("El carrito está vacío", exception.getMessage());
 
-        // Verify: заказ не сохранялся в репозиторий
+        // No se guardó ningún pedido
         verify(pedidoRepository, never()).save(any());
     }
 }

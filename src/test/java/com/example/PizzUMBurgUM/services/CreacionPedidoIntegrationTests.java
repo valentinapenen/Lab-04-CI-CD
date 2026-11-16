@@ -53,7 +53,7 @@ class CreacionPedidoIntegrationTests {
 
     @Test
     void crearPedidoDesdeCarrito_conDatosFicticios_guardaPedidoEnColaYLimpiaCarrito() {
-        // 1. Arrange: создаем клиента, адрес, карту, продукты и две позиции в корзине
+        // 1. Preparación: cliente, domicilio, tarjeta, productos y dos creaciones en el carrito
         Cliente cliente = Cliente.builder()
                 .nombre("Ana")
                 .apellido("Gomez")
@@ -98,14 +98,14 @@ class CreacionPedidoIntegrationTests {
                 .build();
         masa = productoRepository.save(masa);
 
-        Producto bebida = Producto.builder()
-                .nombre("Refresco Cola")
+        Producto carne = Producto.builder()
+                .nombre("Carne vacuna")
                 .precio(120.0)
-                .tipo(TipoProducto.BEBIDA)
-                .categoria(CategoriaProducto.AMBOS)
+                .tipo(TipoProducto.CARNE)
+                .categoria(CategoriaProducto.HAMBURGUESA)
                 .disponible(true)
                 .build();
-        bebida = productoRepository.save(bebida);
+        carne = productoRepository.save(carne);
 
         Creacion item1 = Creacion.builder()
                 .tipo(TipoCreacion.PIZZA)
@@ -120,7 +120,7 @@ class CreacionPedidoIntegrationTests {
 
         Creacion item2 = Creacion.builder()
                 .tipo(TipoCreacion.HAMBURGUESA)
-                .productos(new ArrayList<>(List.of(bebida)))
+                .productos(new ArrayList<>(List.of(carne)))
                 .precioTotal(150.0)
                 .favorito(true)
                 .enCarrito(true)
@@ -130,25 +130,25 @@ class CreacionPedidoIntegrationTests {
 
         double totalEsperado = 500.0; // 350.0 + 150.0
 
-        // 2. Act: подтверждаем заказ из корзины
+        // 2. Ejecución: se confirma el pedido desde el carrito
         Pedido pedidoGuardado = creacionService.crearPedidoDesdeCarrito(
                 cliente,
                 domicilio.getId(),
                 tarjeta.getId()
         );
 
-        // 3. Assert: проверяем сохранение, сумму, статус EN_COLA и очистку корзины
+        // 3. Verificación: pedido guardado, total correcto, estado EN_COLA y carrito vacío
         assertNotNull(pedidoGuardado);
         assertTrue(pedidoGuardado.getIdPedido() > 0);
         assertEquals(totalEsperado, pedidoGuardado.getTotal(), 0.001);
         assertEquals(EstadoPedido.EN_COLA, pedidoGuardado.getEstado());
 
-        // Проверяем в БД H2, что заказ реально сохранен
+        // El pedido quedó guardado en la base H2
         Pedido pedidoEnBd = pedidoRepository.findById(pedidoGuardado.getIdPedido()).orElseThrow();
         assertEquals(totalEsperado, pedidoEnBd.getTotal(), 0.001);
         assertEquals(EstadoPedido.EN_COLA, pedidoEnBd.getEstado());
 
-        // Проверяем, что корзина клиента полностью очищена
+        // El carrito del cliente quedó vacío
         List<Creacion> carritoDespues = creacionRepository.findByClienteIdAndEnCarritoTrue(cliente.getId());
         assertTrue(carritoDespues.isEmpty(), "El carrito debe quedar vacío después de confirmar el pedido");
     }

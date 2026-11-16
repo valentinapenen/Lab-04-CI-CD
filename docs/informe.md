@@ -118,7 +118,7 @@ Con las mismas opciones de H2 que usa el pipeline:
 .\mvnw.cmd test '-Dspring.datasource.url=jdbc:h2:mem:pruebas;DB_CLOSE_DELAY=-1' '-Dspring.datasource.driver-class-name=org.h2.Driver' '-Dspring.datasource.username=sa' '-Dspring.datasource.password=' '-Dspring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect' '-Dspring.jpa.hibernate.ddl-auto=create-drop' '-Dspring.jpa.show-sql=false' '-Dapp.seed-admin=false'
 ```
 
-El resultado esperado es `Tests run: 12, Failures: 0, Errors: 0`.
+El resultado esperado es `Tests run: 22, Failures: 0, Errors: 0`.
 
 ### 4. Levantar Jenkins
 
@@ -186,7 +186,23 @@ Para el caso fallido, recuperamos en una rama de demostración el error que impe
 
 Elegimos el flujo de compra porque recorre los dos módulos principales: las creaciones del carrito y los pedidos. El punto de entrada es `CreacionService.crearPedidoDesdeCarrito()`. Ese método toma las creaciones que el cliente tiene en el carrito, calcula el total, guarda el pedido en `EN_COLA` y saca las creaciones del carrito sin borrar los favoritos.
 
-### Pruebas automáticas
+### Pruebas por módulo
+
+La suite tiene **22 pruebas**. Cada módulo tiene pruebas unitarias de su servicio, con los repositorios simulados con Mockito, y el flujo de compra tiene además pruebas que levantan Spring:
+
+| Módulo | Clase de prueba | Tipo | Casos | Qué comprueba |
+| --- | --- | --- | --- | --- |
+| Productos | `ProductoServiceTests` | Unitaria | 8 | Al crear un producto o cambiar su precio, acepta cero y valores positivos y rechaza los negativos sin guardar. |
+| Creaciones y carrito | `CreacionServiceTests` | Unitaria | 1 | No se puede confirmar un carrito vacío. |
+| Pedidos | `PedidoServiceTests` | Unitaria | 6 | El administrador avanza el estado y puede cancelar un pedido en cola. No se puede retroceder el estado ni modificar un pedido cancelado. El cliente no puede cancelar un pedido en preparación ni el pedido de otro cliente. |
+| Usuarios | `ClienteServiceTests` | Unitaria | 4 | El registro cifra la contraseña y guarda el domicilio y la tarjeta como predeterminados, con el vencimiento al último día del mes. Rechaza contraseñas distintas, un correo o una cédula ya registrados, sin guardar nada. |
+| Carrito y pedidos | `CreacionPedidoIntegrationTests` | Integración (Spring + H2) | 1 | Confirmar el carrito guarda el pedido con el total correcto, en `EN_COLA`, y vacía el carrito. |
+| Pedidos (vista) | `PedidoControllerTests` | Integración (MockMvc) | 1 | El selector de estado del administrador muestra el estado actual. |
+| Aplicación | `PizzUmBurgUmApplicationTests` | Contexto | 1 | El contexto de Spring carga. |
+
+Las pruebas de `PedidoServiceTests` cubren las reglas de estado que aparecieron en la prueba manual, y las de `ClienteServiceTests` usan los mismos datos ficticios de la clienta de esa prueba. Las agregamos al final, cuando revisamos que la letra pide pruebas unitarias de cada módulo.
+
+### Pruebas del flujo de compra
 
 Las pruebas se desarrollaron en la rama `test/carrito-pedidos` y se incorporaron a `main` mediante el pull request #1.
 

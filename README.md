@@ -144,13 +144,15 @@ El proyecto también expone endpoints REST heredados: `/api/bps/funcionarios`, `
 
 ## Pruebas
 
-Hay 12 pruebas:
+Hay 22 pruebas:
 
 | Clase | Tipo | Qué comprueba |
 | --- | --- | --- |
 | [PizzUmBurgUmApplicationTests](src/test/java/com/example/PizzUMBurgUM/PizzUmBurgUmApplicationTests.java) | Contexto | El contexto de Spring carga. |
 | [ProductoServiceTests](src/test/java/com/example/PizzUMBurgUM/services/ProductoServiceTests.java) | Unitaria (8 casos) | Al crear un producto o actualizar su precio, se aceptan cero y valores positivos y se rechazan los negativos sin guardar cambios. |
 | [CreacionServiceTests](src/test/java/com/example/PizzUMBurgUM/services/CreacionServiceTests.java) | Unitaria | Con el carrito vacío no se puede confirmar un pedido y no se guarda nada. |
+| [PedidoServiceTests](src/test/java/com/example/PizzUMBurgUM/services/PedidoServiceTests.java) | Unitaria (6 casos) | El administrador avanza el estado y puede cancelar un pedido en cola. No se puede retroceder ni modificar un pedido cancelado. El cliente no puede cancelar un pedido en preparación ni el de otro cliente. |
+| [ClienteServiceTests](src/test/java/com/example/PizzUMBurgUM/services/ClienteServiceTests.java) | Unitaria (4 casos) | El registro cifra la contraseña y guarda domicilio y tarjeta. Rechaza contraseñas distintas, un correo o una cédula repetidos, sin guardar nada. |
 | [CreacionPedidoIntegrationTests](src/test/java/com/example/PizzUMBurgUM/services/CreacionPedidoIntegrationTests.java) | Integración con H2 | Confirmar el carrito guarda el pedido con el total correcto, en `EN_COLA`, y vacía el carrito. |
 | [PedidoControllerTests](src/test/java/com/example/PizzUMBurgUM/controllers/PedidoControllerTests.java) | Vista con MockMvc | En la lista de pedidos del administrador, el selector muestra el estado actual y no propone `CANCELADO`. |
 
@@ -172,7 +174,7 @@ $testOptions = @(
 .\mvnw.cmd test @testOptions
 ```
 
-El resultado esperado es **12 pruebas, 0 fallos y 0 errores**. Ejecutar solamente `test`, sin esas opciones, usa la configuración PostgreSQL del proyecto. Los reportes se generan en `target/surefire-reports/`. Jenkins usa las mismas opciones en el [Jenkinsfile](Jenkinsfile).
+El resultado esperado es **22 pruebas, 0 fallos y 0 errores**. Ejecutar solamente `test`, sin esas opciones, usa la configuración PostgreSQL del proyecto. Los reportes se generan en `target/surefire-reports/`. Jenkins usa las mismas opciones en el [Jenkinsfile](Jenkinsfile).
 
 ## Despliegue simulado
 

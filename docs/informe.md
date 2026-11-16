@@ -29,6 +29,8 @@ Configuramos **Poll SCM** en Jenkins con `H/2 * * * *`. Jenkins consulta GitHub 
 | Caso | Pruebas | Resultado del despliegue |
 | --- | --- | --- |
 | [Despliegue exitoso · `lab04-pruebas` #10](../jenkins-10-despliegue-exitoso.log) | 9 ejecutadas, 9 aprobadas | Jenkins publicó el JAR y confirmó HTTP 200 para ese commit. Terminó con `SUCCESS`. |
+| [Pruebas de carrito y pedidos · `lab04-pruebas` #11](../jenkins-11-pruebas-unitarias.log) | 11 ejecutadas, 11 aprobadas | Se disparó automáticamente tras el merge del PR #1. Jenkins publicó el JAR de `bc58f29` y confirmó HTTP 200. Terminó con `SUCCESS`. |
+| [Corrección del selector de estado · `lab04-pruebas` #12](../jenkins-12-correccion-selector.log) | 12 ejecutadas, 12 aprobadas | Se disparó automáticamente tras el merge del PR #2. Jenkins publicó el JAR de `3239e24` y confirmó HTTP 200. Terminó con `SUCCESS`. |
 | [Regresión de precio cero · `lab04-demo-fallo` #1](../jenkins-demo-fallo-01.log) | 9 ejecutadas, 8 aprobadas y 1 con error | Jenkins omitió **Guardar JAR** y **Desplegar en simulado**. Terminó con `FAILURE`. |
 
 La corrida #10 se inició automáticamente después del push a `main`. El log muestra `Started by an SCM change`, el commit que descargó Jenkins y `Despliegue confirmado: HTTP 200` para ese mismo commit.
@@ -41,7 +43,7 @@ Elegimos el flujo de compra porque recorre los dos módulos principales: las cre
 
 ### Pruebas automáticas
 
-Las pruebas están en la rama `test/carrito-pedidos`.
+Las pruebas se desarrollaron en la rama `test/carrito-pedidos` y se incorporaron a `main` mediante el pull request #1.
 
 | Prueba | Tipo | Qué comprueba |
 | --- | --- | --- |
@@ -50,40 +52,63 @@ Las pruebas están en la rama `test/carrito-pedidos`.
 
 La prueba de integración usa los repositorios reales sobre H2 y corre dentro de una transacción que se revierte al terminar. Fija el precio de cada creación, así que verifica la suma del total pero no el cálculo del precio de cada pizza o hamburguesa.
 
-Ejecutamos la suite de la rama con las opciones de H2 del README: **11 pruebas, 0 fallos y 0 errores**. Eso incluye las 9 que ya existían y las 2 nuevas.
+Antes del merge ejecutamos la suite localmente con las opciones de H2 del README: **11 pruebas, 0 fallos y 0 errores**. Eso incluye las 9 que ya existían y las 2 nuevas.
 
-> **Pendiente:** agregar la corrida de Jenkins posterior al merge a `main`, con el número de build, el total de pruebas y la confirmación del despliegue.
+Después del merge, Jenkins detectó el cambio en `main` mediante Poll SCM e inició la [corrida #11 de `lab04-pruebas`](../jenkins-11-pruebas-unitarias.log) con `Started by an SCM change`. Descargó el commit `bc58f29` y ejecutó las 11 pruebas sin fallos ni errores. Después publicó `app-11-bc58f29c295e8d4d66143ae021bd6411ecec0453.jar` y confirmó HTTP 200 para ese commit. El ambiente simulado pasó de la versión del build #10 a la del #11.
 
 ### Prueba manual desde la web
 
-Recorrimos el flujo con una cuenta de cliente y otra de administrador:
+Hicimos la prueba en el ambiente simulado (`http://127.0.0.1:8082/`), con la versión del build #12 y una base vacía. Usamos datos ficticios con precios elegidos para que el total se pueda verificar a mano:
 
-1. El cliente armó sus creaciones, las agregó al carrito y confirmó el pedido con un domicilio y una tarjeta de prueba.
-2. El pedido quedó con el número 1 y el estado `EN_COLA` en el seguimiento del cliente.
-3. En **Ventas por fecha**, el administrador vio el pedido del 15/11/2026 a las 17:55, por $470,00 y en `EN_COLA`.
-4. El pedido pasó a `CANCELADO`, y el listado de ventas del administrador mostró el nuevo estado.
+| Producto | Tipo | Precio |
+| --- | --- | --- |
+| Masa tradicional | MASA | $50 |
+| Salsa de tomate | SALSA | $30 |
+| Muzzarella | QUESO | $70 |
+| Pan brioche | PAN | $40 |
+| Carne vacuna | CARNE | $150 |
 
-![Seguimiento del pedido del cliente en EN_COLA](img/validacion/01-seguimiento-en-cola.png)
+El administrador cargó estos productos. Después registramos una clienta ficticia, Laura Prueba, con un domicilio y la tarjeta de prueba `4111 1111 1111 1111`.
 
-![Ventas del administrador con el pedido en EN_COLA](img/validacion/02-ventas-en-cola.png)
+**1. Carrito.** La clienta armó una pizza mediana: $400 de precio base del tamaño, más masa, salsa y muzzarella, en total $550. También armó una hamburguesa con pan, carne y muzzarella, por $260. El carrito muestra las dos creaciones y un total de $810.
 
-![Ventas del administrador con el pedido CANCELADO](img/validacion/03-ventas-cancelado.png)
+![Carrito con una pizza de $550 y una hamburguesa de $260](img/validacion/01-carrito.png)
 
-> **Pendiente:** confirmar en qué ambiente se tomaron las capturas, porque no muestran la URL, y quién canceló el pedido, si el cliente o el administrador. Agregar capturas en `http://127.0.0.1:8082/` con la URL visible: el carrito con las creaciones y sus precios, la confirmación con domicilio y tarjeta, el cambio de estado desde **Pedidos** como administrador (por ejemplo, de `EN_COLA` a `EN_PREPARACION`) y el seguimiento del cliente con el estado nuevo.
+**2. Confirmación.** Antes de confirmar, la aplicación muestra el resumen y pide elegir el domicilio de entrega y la tarjeta.
+
+![Confirmación del pedido con domicilio y tarjeta](img/validacion/02-confirmar-pedido.png)
+
+**3. Seguimiento.** Al confirmar, el pedido 1 queda en `EN_COLA` y el carrito queda vacío.
+
+![Seguimiento del pedido 1 en EN_COLA](img/validacion/03-seguimiento-en-cola.png)
+
+**4. Cambio de estado como administrador.** En **Pedidos**, el administrador avanzó el pedido. El selector muestra el estado actual del pedido. Ese comportamiento es la corrección del error que describimos en [Problemas encontrados](#problemas-encontrados-y-cómo-los-resolvimos).
+
+![El administrador actualiza el pedido a EN_CAMINO](img/validacion/04-admin-cambio-estado.png)
+
+**5. Vista de la clienta.** Después de que el administrador marcó el pedido como entregado, la clienta lo ve en su historial como `ENTREGADO`. El detalle muestra la fecha, el total de $810, el pago con tarjeta, el domicilio y los productos de cada creación con su precio.
+
+![Detalle del pedido 1 en ENTREGADO desde el historial de la clienta](img/validacion/05-cliente-pedido-entregado.png)
 
 | Caso | Resultado esperado | Resultado obtenido |
 | --- | --- | --- |
-| Confirmar un pedido desde el carrito | Se crea un pedido en `EN_COLA` con el total del carrito | ✅ Pedido 1 en `EN_COLA` por $470,00 |
-| Ver el pedido como administrador | Aparece en ventas con su cliente, su estado y su total | ✅ Aparece en **Ventas por fecha** |
-| Cambiar el estado del pedido | El nuevo estado se ve para el administrador y el cliente | ⚠️ Se ve `CANCELADO` en ventas. Falta el avance de estado como administrador y la vista del cliente |
+| Calcular el precio de cada creación | Pizza: tamaño + ingredientes. Hamburguesa: suma de ingredientes | ✅ Pizza $550 y hamburguesa $260 |
+| Confirmar un pedido desde el carrito | Se crea un pedido en `EN_COLA` con el total del carrito | ✅ Pedido 1 en `EN_COLA` por $810 |
+| Cambiar el estado como administrador | El selector parte del estado actual y el cambio se guarda | ✅ "Estado actualizado correctamente", pedido en `EN_CAMINO` |
+| Ver el estado desde la cuenta del cliente | El cliente ve el estado y el detalle actualizados | ✅ Historial con el pedido en `ENTREGADO` |
 
 ## Problemas encontrados y cómo los resolvimos
 
 - **Jenkins no podía clonar el repositorio privado.** Las corridas #1 y #2 terminaron con `Authentication failed`. Guardamos una credencial de lectura en Jenkins y la asociamos al acceso al repositorio.
 - **La aplicación rechazaba el precio cero.** Ajustamos la validación del servicio de productos y agregamos casos de prueba para cero, precios positivos y negativos. Recuperamos el rechazo únicamente en la rama de demostración para comprobar que el pipeline detecta el error antes de desplegar.
+- **El administrador cancelaba pedidos sin querer.** Lo encontramos en la prueba manual sobre el ambiente simulado. Intentamos pasar un pedido de `EN_COLA` a `EN_PREPARACION`, pero quedó `CANCELADO`. El selector de estado de la lista de pedidos no marcaba el estado actual y mostraba `CANCELADO`, la primera opción. Además, la página se recarga cada 5 segundos, así que la opción elegida se perdía y **Actualizar** enviaba `CANCELADO`. Como el servicio permite cancelar un pedido en `EN_COLA` y no deja modificar un pedido cancelado, el pedido quedó cerrado.
+
+  ![El selector muestra CANCELADO aunque el pedido está en EN_COLA](img/validacion/00-error-selector-cancelado.png)
+
+  Las pruebas automáticas no lo detectaban porque cubrían los servicios, pero no la vista. Agregamos `PedidoControllerTests`: la prueba abre `/pedidos` como administrador y comprueba que el selector muestra el estado actual y no propone `CANCELADO`. Primero confirmamos que fallaba con el código anterior. Después corregimos el template con `th:selected` para preseleccionar el estado actual. El cambio entró a `main` con el PR #2, y la [corrida #12](../jenkins-12-correccion-selector.log) lo probó y desplegó automáticamente con 12 pruebas aprobadas. Para repetir la prueba manual desde cero, vaciamos la base del ambiente simulado.
 
 ## Conclusiones
 
 Con el pipeline pudimos pasar de un push a una versión disponible en el ambiente simulado. La corrida exitosa nos permite relacionar el commit, el JAR archivado y la versión que respondió. La corrida fallida mostró que una regresión detectada en las pruebas detiene la publicación y permite seguir usando la versión que ya estaba en ejecución.
 
-La verificación automática del despliegue solo comprueba que responde la página de inicio. El flujo de compra lo cubrimos con pruebas unitarias y de integración y con una prueba manual desde la web. Esos resultados están en [Validación funcional del carrito y los pedidos](#validación-funcional-del-carrito-y-los-pedidos).
+La verificación automática del despliegue solo comprueba que responde la página de inicio. El flujo de compra lo cubrimos con pruebas unitarias y de integración y con una prueba manual desde la web. La prueba manual encontró un error en la pantalla del administrador que las pruebas automáticas no veían. Lo corregimos con el mismo circuito: rama, prueba que lo reproduce, pull request, y prueba y despliegue automáticos. Esos resultados están en [Validación funcional del carrito y los pedidos](#validación-funcional-del-carrito-y-los-pedidos).

@@ -1,0 +1,190 @@
+Started by an SCM change
+Obtained Jenkinsfile from git https://github.com/valentinapenen/Lab-04-CI-CD.git
+[Pipeline] Start of Pipeline
+[Pipeline] node
+Running on Jenkins in /var/jenkins_home/workspace/lab04-pruebas
+[Pipeline] {
+[Pipeline] stage
+[Pipeline] { (Descargar código)
+[Pipeline] checkout
+Selected Git installation does not exist. Using Default
+The recommended git tool is: NONE
+using credential github-lab04
+ > git rev-parse --resolve-git-dir /var/jenkins_home/workspace/lab04-pruebas/.git # timeout=10
+Fetching changes from the remote Git repository
+ > git config remote.origin.url https://github.com/valentinapenen/Lab-04-CI-CD.git # timeout=10
+Fetching upstream changes from https://github.com/valentinapenen/Lab-04-CI-CD.git
+ > git --version # timeout=10
+ > git --version # 'git version 2.47.3'
+using GIT_ASKPASS to set credentials 
+ > git fetch --tags --force --progress -- https://github.com/valentinapenen/Lab-04-CI-CD.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+ > git rev-parse refs/remotes/origin/main^{commit} # timeout=10
+Checking out Revision bc58f29c295e8d4d66143ae021bd6411ecec0453 (refs/remotes/origin/main)
+ > git config core.sparsecheckout # timeout=10
+ > git checkout -f bc58f29c295e8d4d66143ae021bd6411ecec0453 # timeout=10
+Commit message: "Merge pull request #1 from valentinapenen/test/carrito-pedidos"
+ > git rev-list --no-walk abce211ec063b9cdec925f26c5a5fb6b4a056363 # timeout=10
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Compilar, probar y empaquetar)
+[Pipeline] sh
++ sh ./mvnw -B clean package -Dspring.datasource.url=jdbc:h2:mem:pruebas;DB_CLOSE_DELAY=-1 -Dspring.datasource.driver-class-name=org.h2.Driver -Dspring.datasource.username=sa -Dspring.datasource.password= -Dspring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect -Dspring.jpa.hibernate.ddl-auto=create-drop -Dspring.jpa.show-sql=false -Dapp.seed-admin=false
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< com.example:PizzUMBurgUM >----------------------
+[INFO] Building PizzUMBurgUM 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.4.1:clean (default-clean) @ PizzUMBurgUM ---
+[INFO] Deleting /var/jenkins_home/workspace/lab04-pruebas/target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ PizzUMBurgUM ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 46 resources from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ PizzUMBurgUM ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 65 source files with javac [debug parameters release 21] to target/classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ PizzUMBurgUM ---
+[INFO] skip non existing resourceDirectory /var/jenkins_home/workspace/lab04-pruebas/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ PizzUMBurgUM ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 4 source files with javac [debug parameters release 21] to target/test-classes
+[INFO] 
+[INFO] --- surefire:3.5.4:test (default-test) @ PizzUMBurgUM ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.example.PizzUMBurgUM.PizzUmBurgUmApplicationTests
+18:45:27.196 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.example.PizzUMBurgUM.PizzUmBurgUmApplicationTests]: PizzUmBurgUmApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+18:45:27.396 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.example.PizzUMBurgUM.PizzUmBurgUmApplication for test class com.example.PizzUMBurgUM.PizzUmBurgUmApplicationTests
+18:45:27.711 [main] INFO org.springframework.boot.devtools.restart.RestartApplicationListener -- Restart disabled due to context in which it is running
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.6)
+
+2026-11-16T18:45:28.171Z  INFO 791 --- [           main] c.e.P.PizzUmBurgUmApplicationTests       : Starting PizzUmBurgUmApplicationTests using Java 21.0.13 with PID 791 (started by jenkins in /var/jenkins_home/workspace/lab04-pruebas)
+2026-11-16T18:45:28.173Z  INFO 791 --- [           main] c.e.P.PizzUmBurgUmApplicationTests       : No active profile set, falling back to 1 default profile: "default"
+2026-11-16T18:45:29.377Z  INFO 791 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-16T18:45:29.518Z  INFO 791 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 115 ms. Found 9 JPA repository interfaces.
+2026-11-16T18:45:30.373Z  INFO 791 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-11-16T18:45:30.493Z  INFO 791 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.29.Final
+2026-11-16T18:45:30.554Z  INFO 791 --- [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-11-16T18:45:31.026Z  INFO 791 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-16T18:45:31.065Z  INFO 791 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-11-16T18:45:31.364Z  INFO 791 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:pruebas user=SA
+2026-11-16T18:45:31.368Z  INFO 791 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-11-16T18:45:31.413Z  WARN 791 --- [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-11-16T18:45:31.449Z  INFO 791 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-16T18:45:33.390Z  INFO 791 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-16T18:45:33.529Z  INFO 791 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-16T18:45:34.665Z  WARN 791 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-11-16T18:45:35.151Z  WARN 791 --- [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-11-16T18:45:35.795Z  INFO 791 --- [           main] c.e.P.PizzUmBurgUmApplicationTests       : Started PizzUmBurgUmApplicationTests in 8.121 seconds (process running for 9.939)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/var/jenkins_home/.m2/repository/net/bytebuddy/byte-buddy-agent/1.17.7/byte-buddy-agent-1.17.7.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.640 s -- in com.example.PizzUMBurgUM.PizzUmBurgUmApplicationTests
+[INFO] Running com.example.PizzUMBurgUM.services.ProductoServiceTests
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.004 s -- in com.example.PizzUMBurgUM.services.ProductoServiceTests
+[INFO] Running com.example.PizzUMBurgUM.services.CreacionPedidoIntegrationTests
+2026-11-16T18:45:37.632Z  INFO 791 --- [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.example.PizzUMBurgUM.services.CreacionPedidoIntegrationTests]: CreacionPedidoIntegrationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-11-16T18:45:37.708Z  INFO 791 --- [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.example.PizzUMBurgUM.PizzUmBurgUmApplication for test class com.example.PizzUMBurgUM.services.CreacionPedidoIntegrationTests
+2026-11-16T18:45:37.733Z  INFO 791 --- [           main] o.s.b.d.r.RestartApplicationListener     : Restart disabled due to context in which it is running
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.6)
+
+2026-11-16T18:45:37.852Z  INFO 791 --- [           main] c.e.P.s.CreacionPedidoIntegrationTests   : Starting CreacionPedidoIntegrationTests using Java 21.0.13 with PID 791 (started by jenkins in /var/jenkins_home/workspace/lab04-pruebas)
+2026-11-16T18:45:37.853Z  INFO 791 --- [           main] c.e.P.s.CreacionPedidoIntegrationTests   : No active profile set, falling back to 1 default profile: "default"
+2026-11-16T18:45:38.353Z  INFO 791 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-11-16T18:45:38.402Z  INFO 791 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 45 ms. Found 9 JPA repository interfaces.
+2026-11-16T18:45:38.780Z  INFO 791 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-11-16T18:45:38.788Z  INFO 791 --- [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-11-16T18:45:38.816Z  INFO 791 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-11-16T18:45:38.817Z  INFO 791 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-11-16T18:45:38.823Z  INFO 791 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection conn10: url=jdbc:h2:mem:pruebas user=SA
+2026-11-16T18:45:38.823Z  INFO 791 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-11-16T18:45:38.825Z  WARN 791 --- [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-11-16T18:45:38.828Z  INFO 791 --- [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-2)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-11-16T18:45:39.209Z  INFO 791 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-11-16T18:45:39.344Z  INFO 791 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-11-16T18:45:39.760Z  WARN 791 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-11-16T18:45:39.937Z  WARN 791 --- [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-11-16T18:45:40.131Z  INFO 791 --- [           main] c.e.P.s.CreacionPedidoIntegrationTests   : Started CreacionPedidoIntegrationTests in 2.399 seconds (process running for 14.274)
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.029 s -- in com.example.PizzUMBurgUM.services.CreacionPedidoIntegrationTests
+[INFO] Running com.example.PizzUMBurgUM.services.CreacionServiceTests
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.735 s -- in com.example.PizzUMBurgUM.services.CreacionServiceTests
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] 
+[INFO] --- jar:3.4.2:jar (default-jar) @ PizzUMBurgUM ---
+[INFO] Building jar: /var/jenkins_home/workspace/lab04-pruebas/target/PizzUMBurgUM-0.0.1-SNAPSHOT.jar
+[INFO] 
+[INFO] --- spring-boot:3.5.6:repackage (repackage) @ PizzUMBurgUM ---
+[INFO] Replacing main artifact /var/jenkins_home/workspace/lab04-pruebas/target/PizzUMBurgUM-0.0.1-SNAPSHOT.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to /var/jenkins_home/workspace/lab04-pruebas/target/PizzUMBurgUM-0.0.1-SNAPSHOT.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  24.347 s
+[INFO] Finished at: 2026-11-16T18:45:42Z
+[INFO] ------------------------------------------------------------------------
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Guardar JAR)
+[Pipeline] archiveArtifacts
+Archiving artifacts
+Recording fingerprints
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Desplegar en simulado)
+[Pipeline] sh
++ sh deploy/simulado/publicar.sh
+Publicado app-11-bc58f29c295e8d4d66143ae021bd6411ecec0453.jar. Esperando HTTP 200 de esta versión.
+Despliegue confirmado: HTTP 200 para bc58f29c295e8d4d66143ae021bd6411ecec0453
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] }
+[Pipeline] // node
+[Pipeline] End of Pipeline
+Finished: SUCCESS

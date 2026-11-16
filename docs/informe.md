@@ -35,6 +35,48 @@ La corrida #10 se inició automáticamente después del push a `main`. El log mu
 
 Para el caso fallido, recuperamos en una rama de demostración el error que impedía crear productos con precio cero. Cambiamos la validación de `< 0` a `<= 0`. La prueba existente `crearAceptaPreciosNoNegativos` detectó la regresión cuando intentó crear un producto con precio cero. Después de la corrida, comprobamos que el ambiente seguía sirviendo `app-10-abce211ec063b9cdec925f26c5a5fb6b4a056363.jar` y respondía HTTP 200.
 
+## Validación funcional del carrito y los pedidos
+
+Elegimos el flujo de compra porque recorre los dos módulos principales: las creaciones del carrito y los pedidos. El punto de entrada es `CreacionService.crearPedidoDesdeCarrito()`. Ese método toma las creaciones que el cliente tiene en el carrito, calcula el total, guarda el pedido en `EN_COLA` y saca las creaciones del carrito sin borrar los favoritos.
+
+### Pruebas automáticas
+
+Las pruebas están en la rama `test/carrito-pedidos`.
+
+| Prueba | Tipo | Qué comprueba |
+| --- | --- | --- |
+| `CreacionServiceTests.crearPedidoDesdeCarrito_carritoVacio_rechazaYSinGuardarPedido` | Unitaria, con repositorios simulados (Mockito) | Con el carrito vacío, el servicio lanza `IllegalStateException("El carrito está vacío")` y no llama a `pedidoRepository.save`. |
+| `CreacionPedidoIntegrationTests.crearPedidoDesdeCarrito_conDatosFicticios_guardaPedidoEnColaYLimpiaCarrito` | Integración, con Spring Boot y H2 en memoria | Con un cliente, un domicilio, una tarjeta y dos creaciones ficticias de $350 y $150, el pedido se guarda con un total de $500 y en `EN_COLA`. La prueba también lo lee desde la base y comprueba que el carrito quedó vacío. |
+
+La prueba de integración usa los repositorios reales sobre H2 y corre dentro de una transacción que se revierte al terminar. Fija el precio de cada creación, así que verifica la suma del total pero no el cálculo del precio de cada pizza o hamburguesa.
+
+Ejecutamos la suite de la rama con las opciones de H2 del README: **11 pruebas, 0 fallos y 0 errores**. Eso incluye las 9 que ya existían y las 2 nuevas.
+
+> **Pendiente:** agregar la corrida de Jenkins posterior al merge a `main`, con el número de build, el total de pruebas y la confirmación del despliegue.
+
+### Prueba manual desde la web
+
+Recorrimos el flujo con una cuenta de cliente y otra de administrador:
+
+1. El cliente armó sus creaciones, las agregó al carrito y confirmó el pedido con un domicilio y una tarjeta de prueba.
+2. El pedido quedó con el número 1 y el estado `EN_COLA` en el seguimiento del cliente.
+3. En **Ventas por fecha**, el administrador vio el pedido del 15/11/2026 a las 17:55, por $470,00 y en `EN_COLA`.
+4. El pedido pasó a `CANCELADO`, y el listado de ventas del administrador mostró el nuevo estado.
+
+![Seguimiento del pedido del cliente en EN_COLA](img/validacion/01-seguimiento-en-cola.png)
+
+![Ventas del administrador con el pedido en EN_COLA](img/validacion/02-ventas-en-cola.png)
+
+![Ventas del administrador con el pedido CANCELADO](img/validacion/03-ventas-cancelado.png)
+
+> **Pendiente:** confirmar en qué ambiente se tomaron las capturas, porque no muestran la URL, y quién canceló el pedido, si el cliente o el administrador. Agregar capturas en `http://127.0.0.1:8082/` con la URL visible: el carrito con las creaciones y sus precios, la confirmación con domicilio y tarjeta, el cambio de estado desde **Pedidos** como administrador (por ejemplo, de `EN_COLA` a `EN_PREPARACION`) y el seguimiento del cliente con el estado nuevo.
+
+| Caso | Resultado esperado | Resultado obtenido |
+| --- | --- | --- |
+| Confirmar un pedido desde el carrito | Se crea un pedido en `EN_COLA` con el total del carrito | ✅ Pedido 1 en `EN_COLA` por $470,00 |
+| Ver el pedido como administrador | Aparece en ventas con su cliente, su estado y su total | ✅ Aparece en **Ventas por fecha** |
+| Cambiar el estado del pedido | El nuevo estado se ve para el administrador y el cliente | ⚠️ Se ve `CANCELADO` en ventas. Falta el avance de estado como administrador y la vista del cliente |
+
 ## Problemas encontrados y cómo los resolvimos
 
 - **Jenkins no podía clonar el repositorio privado.** Las corridas #1 y #2 terminaron con `Authentication failed`. Guardamos una credencial de lectura en Jenkins y la asociamos al acceso al repositorio.
@@ -44,4 +86,4 @@ Para el caso fallido, recuperamos en una rama de demostración el error que impe
 
 Con el pipeline pudimos pasar de un push a una versión disponible en el ambiente simulado. La corrida exitosa nos permite relacionar el commit, el JAR archivado y la versión que respondió. La corrida fallida mostró que una regresión detectada en las pruebas detiene la publicación y permite seguir usando la versión que ya estaba en ejecución.
 
-La verificación del despliegue cubrió la respuesta de la página de inicio. La evidencia de las pruebas de carrito y pedidos y del recorrido completo de compra se incorpora en la sección de validación funcional del informe.
+La verificación automática del despliegue solo comprueba que responde la página de inicio. El flujo de compra lo cubrimos con pruebas unitarias y de integración y con una prueba manual desde la web. Esos resultados están en [Validación funcional del carrito y los pedidos](#validación-funcional-del-carrito-y-los-pedidos).

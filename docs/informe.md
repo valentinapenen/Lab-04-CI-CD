@@ -1,14 +1,87 @@
-# Entregable 4: CI/CD
+# Entregable 4: CI/CD con Jenkins
 
-# Pipeline y despliegue simulado
+**Programación Avanzada · Curso 2026 · Universidad de Montevideo**
 
-## Arquitectura y decisiones
+**Integrantes:** Valentina Penén y Ekaterina Chechina
 
-Reutilizamos PizzUM-BurgUM como base para el Entregable 4. Configuramos Jenkins para que tome el código de GitHub, ejecute las pruebas, genere el JAR y despliegue esa versión en un ambiente simulado. El flujo queda definido en el [Jenkinsfile](../Jenkinsfile).
+**Repositorio:** [github.com/valentinapenen/Lab-04-CI-CD](https://github.com/valentinapenen/Lab-04-CI-CD)
 
-Jenkins corre en Docker con Java 21. El ambiente simulado tiene su propio contenedor de aplicación y una base PostgreSQL separada del ambiente de desarrollo. Jenkins está disponible en el puerto `8081` y la aplicación simulada en el `8082`. Usamos un volumen compartido para pasar el JAR desde Jenkins al contenedor de la aplicación y registrar qué versión respondió. La configuración del ambiente está en [compose.simulado.yml](../compose.simulado.yml).
+## Arquitectura de la solución
 
-Configuramos **Poll SCM** en Jenkins con `H/2 * * * *`. Jenkins consulta GitHub cada dos minutos y, si encuentra un cambio en `main`, inicia el pipeline. Elegimos esta opción porque Jenkins corre en una computadora local y puede consultar GitHub directamente.
+La solución tiene dos partes: la aplicación web y la infraestructura de integración y despliegue continuo. Todo corre en una computadora local con Docker.
+
+```text
+  Desarrolladoras
+        │ git push / merge de PR
+        ▼
+ ┌──────────────┐  Poll SCM cada 2 min    ┌────────────────────────────────┐
+ │    GitHub    │◄────────────────────────│ Jenkins (contenedor)           │
+ │  rama main   │       checkout          │ jenkins-lab04 · 127.0.0.1:8081 │
+ └──────────────┘                         │                                │
+                                          │ 1. Descargar código            │
+                                          │ 2. Compilar, probar (H2) y     │
+                                          │    empaquetar el JAR           │
+                                          │ 3. Guardar JAR                 │
+                                          │ 4. Desplegar en simulado       │
+                                          └───────────────┬────────────────┘
+                                                          │ publicar.sh copia el JAR
+                                                          ▼
+                                     ┌──────────────────────────────────────┐
+                                     │ Volumen compartido jenkins_lab04_home│
+                                     │  releases/  JAR por versión y        │
+                                     │             current.jar              │
+                                     │  status/    versión que respondió    │
+                                     └───────────────────┬──────────────────┘
+                                                         │ ejecutar.sh detecta el cambio
+                                                         ▼
+ ┌──────────────────────────────────────────────────────────────────────────┐
+ │ Ambiente simulado de producción (compose.simulado.yml)                   │
+ │   app: java -jar current.jar ─── 127.0.0.1:8082                          │
+ │   postgres: PostgreSQL 15 con su propio volumen                          │
+ └──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Aplicación
+
+PizzUM & BurgUM es una aplicación Spring Boot de pedidos para una pizzería y hamburguesería. Está organizada en capas: controladores MVC con vistas Thymeleaf, servicios con las reglas de negocio, repositorios Spring Data JPA y entidades. Spring Security separa los perfiles de cliente y administrador.
+
+La aplicación integra varios módulos funcionales:
+
+| Módulo | Qué hace | Clases principales |
+| --- | --- | --- |
+| Productos | El administrador carga ingredientes y define sus precios | `ProductoService`, `ProductoController` |
+| Creaciones y carrito | El cliente arma pizzas y hamburguesas, las guarda como favoritas y las agrega al carrito | `CreacionService`, `ClienteController` |
+| Pedidos | El cliente confirma el carrito con domicilio y tarjeta. El administrador avanza el estado del pedido | `PedidoService`, `PedidoController` |
+| Usuarios | Registro, inicio de sesión, domicilios y tarjetas | `ClienteService`, `ConfiguracionSeguridad` |
+
+El flujo que probamos con más detalle cruza tres módulos. Las creaciones usan los productos y su precio, y el pedido se arma a partir del carrito.
+
+### Ambientes
+
+| Ambiente | Dónde corre | Base de datos | Uso |
+| --- | --- | --- | --- |
+| Desarrollo | `mvnw spring-boot:run`, en `localhost:8080` | PostgreSQL de `docker-compose.yml` | Programar y probar localmente |
+| Pruebas automáticas | Dentro de cada corrida de Jenkins | H2 en memoria, se crea y se borra en cada corrida | Ejecutar las pruebas sin depender de una base externa |
+| Simulado de producción | Contenedor `app` de `compose.simulado.yml`, en `127.0.0.1:8082` | PostgreSQL propio, separado del de desarrollo | Recibir cada versión que aprueba el pipeline |
+
+Jenkins y el ambiente simulado comparten un volumen de Docker. Jenkins deja ahí el JAR de cada versión y apunta `current.jar` a la nueva. El contenedor de la aplicación detecta el cambio, reinicia con ese JAR y registra qué versión devolvió HTTP 200. Jenkins da el despliegue por bueno cuando ese registro coincide con lo que publicó. Así, cada despliegue queda asociado a un número de corrida y a un commit (`app-<corrida>-<commit>.jar`).
+
+## Decisiones tomadas y su justificación
+
+| Decisión | Justificación |
+| --- | --- |
+| **Reutilizar PizzUM & BurgUM** | Es una aplicación que desarrollamos para Proyecto TIC (2025). Ya tenía varios módulos que se integran entre sí, así que pudimos dedicar el tiempo al proceso de CI/CD, que es el foco del entregable. Conservamos su historial de Git. |
+| **Java 21 con Spring Boot 3.5** | La letra pide Java con Spring. La aplicación ya estaba hecha así, y Java 21 es la versión LTS que usan tanto la imagen de Jenkins como el ambiente simulado. |
+| **Maven Wrapper** | Jenkins compila con `./mvnw` y no necesita tener Maven instalado. La versión de Maven queda fija en el repositorio. |
+| **PostgreSQL para desarrollo y producción simulada** | Es la base que ya usaba la aplicación. El ambiente simulado tiene su propia instancia para no mezclar datos con desarrollo. |
+| **H2 en memoria para las pruebas** | Las pruebas no dependen de que haya una base levantada, arrancan de cero en cada corrida y no ensucian otros ambientes. Las opciones se pasan por línea de comandos en el `Jenkinsfile`. |
+| **JUnit 5 y Mockito para las pruebas unitarias, y `@SpringBootTest` para las de integración** | Las unitarias prueban la lógica de un servicio con repositorios simulados. Las de integración levantan Spring con los repositorios reales sobre H2. Para la vista usamos MockMvc con Spring Security Test. |
+| **Jenkins en Docker** | Se instala con un solo comando, usa el mismo Java 21 y guarda su configuración en un volumen, así que sobrevive a reinicios. |
+| **Pipeline declarativo versionado (`Jenkinsfile`)** | El pipeline queda en el repositorio junto al código. Los cambios al pipeline pasan por Git como cualquier otro cambio. |
+| **Poll SCM cada 2 minutos en lugar de webhook** | Jenkins corre en una computadora local que GitHub no puede alcanzar desde internet, así que un webhook no llegaría sin exponer la máquina. Con el polling, Jenkins es el que consulta a GitHub. El costo es una demora de hasta 2 minutos. |
+| **Docker Compose como ambiente simulado** | La letra permite una carpeta local o un contenedor. El contenedor aísla la aplicación y su base, se levanta con un comando y se parece más a un servidor real. |
+| **Confirmar el despliegue con HTTP 200 y volver a la versión anterior** | Que el JAR se copie no garantiza que la aplicación arranque. El pipeline espera a que la versión nueva responda. Si no responde a tiempo, vuelve a activar la versión anterior y la corrida falla. |
+| **Ramas por tarea y pull requests a `main`** | `main` es la rama que se despliega. Cada cambio entra por un PR, y el merge es lo que dispara el pipeline. |
 
 ## Etapas del pipeline
 
@@ -17,12 +90,84 @@ Configuramos **Poll SCM** en Jenkins con `H/2 * * * *`. Jenkins consulta GitHub 
 3. **Guardar JAR.** Jenkins archiva el JAR y registra su huella digital para poder identificar el archivo que produjo cada corrida.
 4. **Desplegar en simulado.** [`publicar.sh`](../deploy/simulado/publicar.sh) copia el JAR al volumen compartido y selecciona la nueva versión. [`ejecutar.sh`](../deploy/simulado/ejecutar.sh) detecta el cambio, reinicia la aplicación con ese JAR y registra qué versión devuelve HTTP 200 en la página de inicio. Jenkins confirma el despliegue cuando ese registro coincide con el JAR publicado. Si vence la espera y hay una versión anterior, el script vuelve a seleccionarla y la etapa termina con error.
 
-## Cómo repetir la demostración
+## Instructivo de ejecución
 
-1. Iniciar Docker Desktop y el contenedor `jenkins-lab04`. Levantar la aplicación y la base con los comandos de [Despliegue simulado](../README.md#despliegue-simulado).
-2. En Jenkins, verificar que `lab04-pruebas` use **Pipeline script from SCM**, la rama `*/main`, el archivo `Jenkinsfile` y una credencial con acceso de lectura al repositorio. Guardar **Poll SCM** con `H/2 * * * *`.
-3. Subir un cambio válido a `main` y esperar la consulta de Jenkins. En la consola, comprobar el disparo automático, el resultado de las pruebas y el hash del despliegue. Abrir la [aplicación simulada](http://127.0.0.1:8082/).
-4. Para el caso fallido, ejecutar manualmente `lab04-demo-fallo`, que usa `*/demo/prueba-fallida`. Comprobar que falla el caso del precio cero, que Jenkins omite las etapas de guardado y despliegue y que la aplicación sigue respondiendo con la versión del caso exitoso.
+Requisitos: Windows, macOS o Linux con **Docker Desktop** (o Docker Engine con Compose), **Git** y, para correr la aplicación fuera de Docker, **JDK 21**. Los comandos están escritos para PowerShell. En Linux o macOS, usar `./mvnw` en lugar de `.\mvnw.cmd`.
+
+### 1. Obtener el código
+
+```powershell
+git clone https://github.com/valentinapenen/Lab-04-CI-CD.git
+cd Lab-04-CI-CD
+```
+
+### 2. Ejecutar la aplicación en desarrollo (opcional)
+
+```powershell
+docker compose up -d postgres
+.\mvnw.cmd spring-boot:run
+```
+
+La aplicación queda en `http://localhost:8080/`. El administrador inicial se crea con los datos `app.seed-admin.*` de `application.properties`.
+
+### 3. Ejecutar las pruebas localmente
+
+Con las mismas opciones de H2 que usa el pipeline:
+
+```powershell
+.\mvnw.cmd test '-Dspring.datasource.url=jdbc:h2:mem:pruebas;DB_CLOSE_DELAY=-1' '-Dspring.datasource.driver-class-name=org.h2.Driver' '-Dspring.datasource.username=sa' '-Dspring.datasource.password=' '-Dspring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect' '-Dspring.jpa.hibernate.ddl-auto=create-drop' '-Dspring.jpa.show-sql=false' '-Dapp.seed-admin=false'
+```
+
+El resultado esperado es `Tests run: 12, Failures: 0, Errors: 0`.
+
+### 4. Levantar Jenkins
+
+```powershell
+docker run -d --name jenkins-lab04 -p 127.0.0.1:8081:8080 -v jenkins_lab04_home:/var/jenkins_home jenkins/jenkins:lts-jdk21
+docker exec jenkins-lab04 cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+Abrir `http://127.0.0.1:8081/`, pegar la contraseña inicial, instalar los plugins sugeridos (incluyen Git y Pipeline) y crear el usuario administrador. Las próximas veces alcanza con `docker start jenkins-lab04`.
+
+### 5. Levantar el ambiente simulado de producción
+
+El ambiente usa un archivo `deploy/simulado/.env` con las contraseñas de su base y de su administrador. Git lo ignora. Este bloque lo genera la primera vez, prepara las carpetas en el volumen de Jenkins y levanta los contenedores:
+
+```powershell
+$simEnv = 'deploy/simulado/.env'
+if (-not (Test-Path -LiteralPath $simEnv)) {
+    $dbPassword = [Guid]::NewGuid().ToString('N')
+    $adminPassword = [Guid]::NewGuid().ToString('N')
+    @(
+        "LAB04_SIM_DB_PASSWORD=$dbPassword"
+        "LAB04_SIM_ADMIN_PASSWORD=$adminPassword"
+    ) | Set-Content -LiteralPath $simEnv -Encoding ascii
+}
+docker exec jenkins-lab04 mkdir -p /var/jenkins_home/lab04-simulado/releases /var/jenkins_home/lab04-simulado/status
+docker compose --env-file $simEnv -f compose.simulado.yml up -d
+```
+
+Hasta el primer despliegue, el contenedor `app` espera sin servir nada. Después de la primera corrida exitosa, la aplicación queda en `http://127.0.0.1:8082/`. Para iniciar sesión como administrador, se usa el correo `app.seed-admin.correo` y la contraseña `LAB04_SIM_ADMIN_PASSWORD` del `.env`.
+
+### 6. Configurar los trabajos de Jenkins
+
+1. En **Manage Jenkins → Credentials**, agregar una credencial *Username with password* con ID `github-lab04`: el usuario de GitHub y un token con permiso de lectura del repositorio. Hace falta porque el repositorio es privado.
+2. Crear el trabajo **`lab04-pruebas`** de tipo *Pipeline*:
+   - **Build Triggers:** *Poll SCM* con `H/2 * * * *`.
+   - **Pipeline:** *Pipeline script from SCM*, Git, la URL del repositorio, la credencial `github-lab04`, la rama `*/main` y el script `Jenkinsfile`.
+3. Crear el trabajo **`lab04-demo-fallo`** con la misma configuración, pero con la rama `*/demo/prueba-fallida` y sin *Poll SCM*. Se ejecuta a mano para mostrar el caso fallido.
+
+### 7. Demostración
+
+- **Caso exitoso:** subir un cambio a `main`, directo o con el merge de un PR. En hasta 2 minutos aparece una corrida nueva de `lab04-pruebas`. En **Console Output** se ven `Started by an SCM change`, el commit, el total de pruebas y `Despliegue confirmado: HTTP 200 para <commit>`. Al recargar `http://127.0.0.1:8082/` se ve la versión nueva.
+- **Caso con fallo:** ejecutar **Build Now** en `lab04-demo-fallo`. La prueba `crearAceptaPreciosNoNegativos` falla y Jenkins marca **Guardar JAR** y **Desplegar en simulado** como omitidas. La corrida termina en `FAILURE` y el 8082 sigue sirviendo la versión anterior. Para corregirlo, se arregla el código en una rama, se suben los cambios y se vuelve a ejecutar.
+
+Para detener todo sin perder datos:
+
+```powershell
+docker compose --env-file deploy/simulado/.env -f compose.simulado.yml stop
+docker stop jenkins-lab04
+```
 
 ## Resultados de las corridas
 
@@ -112,3 +257,15 @@ El administrador cargó estos productos. Después registramos una clienta fictic
 Con el pipeline pudimos pasar de un push a una versión disponible en el ambiente simulado. La corrida exitosa nos permite relacionar el commit, el JAR archivado y la versión que respondió. La corrida fallida mostró que una regresión detectada en las pruebas detiene la publicación y permite seguir usando la versión que ya estaba en ejecución.
 
 La verificación automática del despliegue solo comprueba que responde la página de inicio. El flujo de compra lo cubrimos con pruebas unitarias y de integración y con una prueba manual desde la web. La prueba manual encontró un error en la pantalla del administrador que las pruebas automáticas no veían. Lo corregimos con el mismo circuito: rama, prueba que lo reproduce, pull request, y prueba y despliegue automáticos. Esos resultados están en [Validación funcional del carrito y los pedidos](#validación-funcional-del-carrito-y-los-pedidos).
+
+### Dificultades
+
+- **Conectar Jenkins con el repositorio.** Como el repositorio es privado, las primeras corridas fallaron por autenticación. Además, Jenkins corre en una computadora local que GitHub no puede alcanzar, así que no pudimos usar un webhook. Tuvimos que crear una credencial de lectura y configurar el polling.
+- **Pasar el JAR de Jenkins al ambiente simulado.** Copiar el archivo no alcanzaba para saber si la versión nueva estaba funcionando. Diseñamos el intercambio por el volumen compartido, con un registro de la versión que respondió HTTP 200 y la vuelta a la versión anterior si la nueva no responde.
+- **Separar la configuración por ambiente.** La aplicación heredada tenía la conexión a PostgreSQL fija en `application.properties`. Para las pruebas la reemplazamos por H2 desde la línea de comandos. Para el ambiente simulado usamos variables de entorno y un `.env` que no se sube al repositorio.
+- **Trabajo en equipo con distintas configuraciones.** Una integrante no pudo usar Jenkins en su máquina. Pudo escribir las pruebas igual, porque se ejecutan localmente con H2, y la otra integrante las integró y verificó en el pipeline. Coordinar el trabajo con ramas y pull requests nos permitió avanzar en paralelo sin pisarnos.
+- **Datos de prueba en el ambiente simulado.** Al recorrer el flujo de compra cargamos datos con errores, como un producto con la categoría equivocada, y el error del selector canceló un pedido que ya no se podía modificar. Para repetir la prueba desde cero tuvimos que vaciar la base del ambiente simulado.
+
+### Qué aprendimos
+
+Las pruebas automáticas dan confianza para desplegar solo si cubren lo que importa. Nuestras pruebas de servicios pasaban, y aun así la pantalla del administrador tenía un error que cancelaba pedidos. La prueba manual en un ambiente parecido a producción lo encontró, y el pipeline permitió corregirlo con el mismo proceso: una prueba que reproduce el error, el cambio, la revisión en un PR y el despliegue automático.

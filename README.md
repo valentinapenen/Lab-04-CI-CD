@@ -29,7 +29,9 @@ En el modelo, un **Producto** es un ingrediente o complemento del catálogo; una
 | Spring Security | Autenticación, roles y sesión de usuario. |
 | Spring Data JPA / Hibernate | Entidades y acceso a datos. |
 | PostgreSQL 15 | Base de datos de desarrollo, disponible mediante Docker Compose. |
-| H2 | Base temporal utilizada para la comprobación aislada del contexto. |
+| H2 | Base en memoria para las pruebas automáticas, local y en Jenkins. |
+| JUnit 5, Mockito y MockMvc | Pruebas unitarias, de integración y de la vista. |
+| Jenkins y Docker Compose | Pipeline de CI/CD y ambiente simulado de producción. |
 | Lombok | Generación de getters, setters y constructores, entre otros. |
 | Maven Wrapper 3.9.11 | Compilación y ejecución sin instalar Maven por separado. |
 
@@ -142,10 +144,17 @@ El proyecto también expone endpoints REST heredados: `/api/bps/funcionarios`, `
 
 ## Pruebas
 
-Las pruebas disponibles son:
+Hay 12 pruebas:
 
-- [PizzUmBurgUmApplicationTests](src/test/java/com/example/PizzUMBurgUM/PizzUmBurgUmApplicationTests.java): comprueba que el contexto de Spring carga.
-- [ProductoServiceTests](src/test/java/com/example/PizzUMBurgUM/services/ProductoServiceTests.java): ocho casos unitarios de creación y actualización de precios. Aceptan cero y valores positivos, y rechazan negativos sin guardar cambios. Utilizan repositorios simulados.
+| Clase | Tipo | Qué comprueba |
+| --- | --- | --- |
+| [PizzUmBurgUmApplicationTests](src/test/java/com/example/PizzUMBurgUM/PizzUmBurgUmApplicationTests.java) | Contexto | El contexto de Spring carga. |
+| [ProductoServiceTests](src/test/java/com/example/PizzUMBurgUM/services/ProductoServiceTests.java) | Unitaria (8 casos) | Al crear un producto o actualizar su precio, se aceptan cero y valores positivos y se rechazan los negativos sin guardar cambios. |
+| [CreacionServiceTests](src/test/java/com/example/PizzUMBurgUM/services/CreacionServiceTests.java) | Unitaria | Con el carrito vacío no se puede confirmar un pedido y no se guarda nada. |
+| [CreacionPedidoIntegrationTests](src/test/java/com/example/PizzUMBurgUM/services/CreacionPedidoIntegrationTests.java) | Integración con H2 | Confirmar el carrito guarda el pedido con el total correcto, en `EN_COLA`, y vacía el carrito. |
+| [PedidoControllerTests](src/test/java/com/example/PizzUMBurgUM/controllers/PedidoControllerTests.java) | Vista con MockMvc | En la lista de pedidos del administrador, el selector muestra el estado actual y no propone `CANCELADO`. |
+
+Las unitarias usan repositorios simulados con Mockito. Las otras levantan Spring.
 
 Para ejecutarlas con una base H2 temporal, sin utilizar PostgreSQL ni crear el administrador inicial, desde PowerShell:
 
@@ -163,9 +172,7 @@ $testOptions = @(
 .\mvnw.cmd test @testOptions
 ```
 
-Ejecutar solamente `test`, sin esas opciones, utiliza la configuración PostgreSQL del proyecto. Todavía no hay un perfil de pruebas dedicado. Los reportes se generan en `target/surefire-reports/`.
-
-La preparación inicial se verificó compilando con JDK 24 y destino Java 21, y ejecutando el test con H2: **1 test, 0 fallos y 0 errores**. Esto no demuestra el funcionamiento completo con PostgreSQL. La comprobación HTTP quedó pendiente porque el entorno de revisión impidió que Java estableciera una conexión local. No hay un linter configurado.
+El resultado esperado es **12 pruebas, 0 fallos y 0 errores**. Ejecutar solamente `test`, sin esas opciones, usa la configuración PostgreSQL del proyecto. Los reportes se generan en `target/surefire-reports/`. Jenkins usa las mismas opciones en el [Jenkinsfile](Jenkinsfile).
 
 ## Despliegue simulado
 
@@ -203,21 +210,19 @@ Para detener el ambiente simulado conservando la base y el JAR publicado:
 docker compose --env-file deploy/simulado/.env -f compose.simulado.yml stop
 ```
 
-## Estado inicial y próximos pasos
+## Documentación del entregable
 
-La preparación inicial retiró clases y recursos sin referencias, imports sobrantes, comentarios temporales y mensajes de depuración con datos personales o hashes de contraseñas. También ajustó los metadatos del proyecto.
+El [informe](docs/informe.md) describe la arquitectura, las decisiones, el instructivo completo (incluida la configuración de Jenkins), los resultados de las corridas, la validación funcional y los errores encontrados. Los logs de las corridas están en la raíz del repositorio (`jenkins-*.log`), y las capturas en `docs/img/validacion/`.
 
-Para el Entregable 4 queda implementar:
+Como el grupo tiene dos integrantes, el anexo de UAT con aprobación manual no aplica.
 
-- Ampliar las pruebas unitarias a los módulos pendientes y agregar pruebas de integración de los flujos de negocio.
-- UAT y aprobación manual del despliegue si el grupo tiene tres integrantes.
-- Documentación del pipeline, errores encontrados y demostración de los casos exitoso y fallido.
+## Detalles heredados del proyecto original
 
-Antes de modificar un flujo, tener presentes estos puntos de la base heredada:
+La preparación inicial retiró clases y recursos sin referencias, imports sobrantes, comentarios temporales y mensajes de depuración con datos personales o hashes de contraseñas. Quedan estos puntos de la base heredada, fuera del alcance de este entregable:
 
-- `TarjetaController`, `DomicilioController` y `CreacionController` conservan rutas antiguas que apuntan a seis vistas inexistentes. Las pantallas actuales usan los controladores indicados en el mapa de componentes. Su retiro está pendiente de revisión.
+- `TarjetaController`, `DomicilioController` y `CreacionController` conservan rutas antiguas que apuntan a seis vistas inexistentes. Las pantallas actuales usan los controladores indicados en el mapa de componentes.
 - `UsuarioService.login()` conserva una implementación antigua sin llamadas encontradas. La autenticación vigente pasa por Spring Security.
-- `ClienteDomicilioController` mantiene redirecciones a `/usuario/login`, una ruta inexistente; el acceso actual es `/iniciar-sesion`.
-- La configuración de desarrollo heredada todavía incluye credenciales fijas. Falta comprobar el recorrido completo de compra con PostgreSQL.
+- `ClienteDomicilioController` mantiene redirecciones a `/usuario/login`, una ruta inexistente. El acceso actual es `/iniciar-sesion`.
+- La configuración de desarrollo heredada incluye credenciales fijas en `application.properties` y `docker-compose.yml`. El ambiente simulado no las usa: toma sus contraseñas de `deploy/simulado/.env`.
 
 Para trabajar en esta entrega, crear las ramas de cada tarea desde `main` y abrir los pull requests en **Lab-04-CI-CD**. El repositorio original se mantiene como referencia del trabajo anterior.

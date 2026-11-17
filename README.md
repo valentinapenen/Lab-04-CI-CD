@@ -214,7 +214,7 @@ docker compose --env-file deploy/simulado/.env -f compose.simulado.yml stop
 
 ## Documentación del entregable
 
-El [informe](docs/informe.md) describe la arquitectura, las decisiones, el instructivo completo (incluida la configuración de Jenkins), los resultados de las corridas, la validación funcional y los errores encontrados. Los logs de las corridas están en la raíz del repositorio (`jenkins-*.log`), y las capturas en `docs/img/validacion/`.
+El informe describe la arquitectura, las decisiones, el instructivo completo (incluida la configuración de Jenkins), los resultados de las corridas y los errores encontrados. En la entrega está en PDF (`Informe-Entregable4-PenenChechina.pdf`); en el repositorio, su fuente es [docs/informe.md](docs/informe.md). Los logs de las corridas están en la raíz (`jenkins-*.log`).
 
 Como el grupo tiene dos integrantes, el anexo de UAT con aprobación manual no aplica.
 
